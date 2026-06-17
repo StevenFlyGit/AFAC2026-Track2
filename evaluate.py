@@ -5,7 +5,11 @@ import sys
 
 # Ensure local packages (like rapidfuzz) in the Code folder can be imported
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import rapidfuzz
+try:
+    import rapidfuzz
+except ImportError:
+    rapidfuzz = None
+    import difflib
 
 def main():
     parser = argparse.ArgumentParser(description="AFAC2026 Track 2 Local Evaluation (Text Edit)")
@@ -29,7 +33,7 @@ def main():
     
     predictions = {}
     try:
-        with open(args.csv_path, "r", encoding="utf-8") as f:
+        with open(args.csv_path, "r", encoding="utf-8-sig") as f:
             reader = csv.reader(f)
             header = next(reader, None)
             if not header or len(header) < 2:
@@ -67,17 +71,22 @@ def main():
             print(f"Error reading ground truth {gt_file_path}: {e}. Skipping.")
             continue
             
-        # Compute Levenshtein distance
-        dist = rapidfuzz.distance.Levenshtein.distance(pred_text, gt_text)
-        
-        # Normalize by Ground Truth length
+        # Compute distance
         gt_len = len(gt_text)
-        if gt_len == 0:
-            text_edit = 0.0 if len(pred_text) == 0 else 1.0
+        if rapidfuzz:
+            dist = rapidfuzz.distance.Levenshtein.distance(pred_text, gt_text)
+            if gt_len == 0:
+                text_edit = 0.0 if len(pred_text) == 0 else 1.0
+            else:
+                text_edit = dist / gt_len
+            text_score = max(0.0, (1.0 - text_edit) * 100.0)
         else:
-            text_edit = dist / gt_len
-            
-        text_score = max(0.0, (1.0 - text_edit) * 100.0)
+            matcher = difflib.SequenceMatcher(None, pred_text, gt_text)
+            ratio = matcher.ratio()  # strict ratio
+            text_score = ratio * 100.0
+            dist = -1  # Not Available
+            text_edit = 1.0 - ratio
+            print("  [Notice] rapidfuzz not found, using difflib ratio as fallback score.")
         
         print(f"File: {file_name} | GT Length: {gt_len} | Pred Length: {len(pred_text)} | Distance: {dist} | Text Edit (Loss): {text_edit:.4f} | Score: {text_score:.2f}")
         

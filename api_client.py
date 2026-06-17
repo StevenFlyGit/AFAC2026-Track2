@@ -46,7 +46,20 @@ def call_finix_api(image_path, user_id="finixC3003", api_key="F935A5503983FB19F2
         
         try:
             print(f"Calling FinixDoc-VL API for {os.path.basename(image_path)} (Attempt {attempt}/{max_retries})...")
+            print(f"========== API CALL START ==========")
+            print(f"Input image path: {image_path}")
+            print(f"Input URL: {url}")
+            print(f"Input Data: {data}")
+            
             response = requests.post(url, data=data, files=files, timeout=90)
+            
+            print(f"========== API CALL END ==========")
+            print(f"Status Code: {response.status_code}")
+            try:
+                print(f"Response Content: {response.text[:200]}...")
+            except Exception:
+                print("Could not print response text.")
+
             
             if response.status_code == 200:
                 response.encoding = 'utf-8'
