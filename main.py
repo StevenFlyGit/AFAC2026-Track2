@@ -3,7 +3,7 @@ import argparse
 import csv
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from utils import slice_image
+from utils import slice_image, merge_markdown_pair
 from api_client import call_finix_api
 
 def clean_markdown(text):
@@ -124,15 +124,31 @@ def main():
                 except Exception as exc:
                     print(f"  Slice {s_idx+1} generated an exception: {exc}")
                     chunk_texts[s_idx] = ""
+                    
+        # 2. Single-threaded cleanup retry for any failed slices
+        failed_indices = [i for i, text in enumerate(chunk_texts) if not text]
+        if failed_indices:
+            print(f"  [Warning] {len(failed_indices)} slice(s) failed during parallel phase. Starting single-threaded retry...")
+            for s_idx in failed_indices:
+                slice_path = slices[s_idx]['path']
+                print(f"  [Retry] Slice {s_idx+1}/{total_slices}: {os.path.basename(slice_path)}")
+                _, chunk_md = process_single_slice(s_idx, total_slices, slice_path)
+                if chunk_md:
+                    chunk_texts[s_idx] = chunk_md
+                    print(f"  [Retry Success] Slice {s_idx+1} recovered successfully.")
+                else:
+                    print(f"  [Retry Failure] Slice {s_idx+1} failed again.")
                 
-        # 2. Stitch chunks (Baseline: simple concatenation)
-        final_markdown = "\n\n".join(chunk_texts)
+        # 3. Stitch chunks (Stage 2: LCS-based deduplication)
+        final_markdown = chunk_texts[0] if chunk_texts else ""
+        for next_text in chunk_texts[1:]:
+            final_markdown = merge_markdown_pair(final_markdown, next_text)
         
-        # 3. Append to CSV incrementally
+        # 4. Append to CSV incrementally
         try:
             with open(args.output, "a", encoding="utf-8-sig", newline="") as f:
                 writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-                writer.writerow([img_name, final_markdown])
+                writer.writerow([os.path.basename(img_name), final_markdown])
             print(f"  [Success] Saved result for {img_name} to CSV.")
         except Exception as e:
             print(f"  [Error] Failed to append result for {img_name} to CSV: {e}")

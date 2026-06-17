@@ -57,7 +57,7 @@ def main():
     print("\n--- Starting Evaluation ---")
     for file_name, pred_text in sorted(predictions.items()):
         # Ground truth file matches the UUID name, but has .md extension
-        base_name = os.path.splitext(file_name)[0]
+        base_name = os.path.splitext(os.path.basename(file_name))[0]
         gt_file_path = os.path.join(args.gt_dir, f"{base_name}.md")
         
         if not os.path.exists(gt_file_path):

@@ -56,7 +56,7 @@ def main():
         
         for row in reader:
             if len(row) >= 2:
-                file_name = row[0]
+                file_name = os.path.basename(row[0])
                 content = row[1]
                 cleaned_content = clean_entire_text(content)
                 cleaned_rows.append([file_name, cleaned_content])
