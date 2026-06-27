@@ -3,6 +3,19 @@ import json
 import time
 import os
 
+import threading
+
+_user_locks = {}
+_user_locks_lock = threading.Lock()
+_last_request_times = {}
+
+def get_user_lock_and_time(user_id):
+    with _user_locks_lock:
+        if user_id not in _user_locks:
+            _user_locks[user_id] = threading.Lock()
+            _last_request_times[user_id] = 0.0
+        return _user_locks[user_id]
+
 def call_finix_api(image_path, user_id="finixC3003", api_key="F935A5503983FB19F26FA3F00A94EBF9", max_retries=5, backoff_factor=3):
     """
     Calls the FinixDoc-VL API to parse an image to Markdown text.
@@ -45,13 +58,22 @@ def call_finix_api(image_path, user_id="finixC3003", api_key="F935A5503983FB19F2
         }
         
         try:
-            print(f"Calling FinixDoc-VL API for {os.path.basename(image_path)} (Attempt {attempt}/{max_retries})...")
+            user_lock = get_user_lock_and_time(user_id)
+            with user_lock:
+                now = time.time()
+                elapsed = now - _last_request_times.get(user_id, 0.0)
+                # Enforce at least 6 seconds between any two API requests for the same user
+                if elapsed < 6.0:
+                    time.sleep(6.0 - elapsed)
+                _last_request_times[user_id] = time.time()
+                
+            print(f"Calling FinixDoc-VL API for {os.path.basename(image_path)} using {user_id} (Attempt {attempt}/{max_retries})...")
             print(f"========== API CALL START ==========")
             print(f"Input image path: {image_path}")
             print(f"Input URL: {url}")
             print(f"Input Data: {data}")
             
-            response = requests.post(url, data=data, files=files, timeout=90)
+            response = requests.post(url, data=data, files=files, timeout=240)
             
             print(f"========== API CALL END ==========")
             print(f"Status Code: {response.status_code}")

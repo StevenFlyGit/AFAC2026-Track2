@@ -40,8 +40,8 @@ def process_single_slice(slice_idx, total_slices, slice_path):
 
 def main():
     parser = argparse.ArgumentParser(description="AFAC2026 Track 2 Baseline Pipeline")
-    parser.add_argument("--img_dir", type=str, default="../AFAC_DataSet", help="Directory containing input images")
-    parser.add_argument("--output", type=str, default="../Output/submission.csv", help="Path to output CSV file")
+    parser.add_argument("--img_dir", type=str, default="../../AFAC_DataSet", help="Directory containing input images")
+    parser.add_argument("--output", type=str, default="../../Output/submission.csv", help="Path to output CSV file")
     parser.add_argument("--limit", type=int, default=None, help="Limit the number of images to process (useful for testing)")
     parser.add_argument("--chunk_height", type=int, default=5000, help="Height of vertical slices")
     parser.add_argument("--overlap_pct", type=float, default=0.15, help="Overlap percentage between slices")

@@ -7,7 +7,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from api_client import call_finix_api
 
-DATASET_DIR = r"F:\ProgramProject\AFAC2026\Track2\Code\Cache"
+DATASET_DIR = r"F:\ProgramProject\AFAC2026\Track2\AFAC_DataSet\finixdocbench_huge_table_100\images"
 OUTPUT_DIR = r"F:\ProgramProject\AFAC2026\Track2\Demo"
 API_USER_ID = "finixC3003"
 API_KEY = "F935A5503983FB19F26FA3F00A94EBF9"
@@ -28,7 +28,7 @@ def process_one(img_name):
 
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    imgs = sorted(f for f in os.listdir(DATASET_DIR) if f.lower().endswith(("01ac6c2a-a9ce-4a19-bb55-096f62222450_chunk_0.jpg")))
+    imgs = sorted(f for f in os.listdir(DATASET_DIR) if f.lower().endswith(("9723e972-9575-45be-81d7-35c426d3060f.jpg")))
     print(f"Found {len(imgs)} images, starting with {MAX_WORKERS} workers.\n")
     t0 = time.time()
     ok, fail = 0, []
